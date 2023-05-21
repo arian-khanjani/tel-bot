@@ -21,7 +21,7 @@ func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 	log.Println("Starting Server...")
 
-	err := godotenv.Load(".env")
+	err := godotenv.Load("../.env")
 	if err != nil {
 		panic(err)
 	}
@@ -110,20 +110,29 @@ func main() {
 	<-serverCtx.Done()
 }
 
+const (
+	AddUser = "Add User"
+	Test1   = "Test1"
+	Test2   = "Test2"
+	Test3   = "Test3"
+	Test4   = "Test4"
+	Test5   = "Test5"
+)
+
 var keyboard1 = telBotAPI.NewReplyKeyboard(
 	telBotAPI.NewKeyboardButtonRow(
-		telBotAPI.NewKeyboardButton("1"),
-		telBotAPI.NewKeyboardButton("2"),
-		telBotAPI.NewKeyboardButton("3"),
+		telBotAPI.NewKeyboardButton(AddUser),
+		telBotAPI.NewKeyboardButton(Test1),
+		telBotAPI.NewKeyboardButton(Test2),
 	),
 	telBotAPI.NewKeyboardButtonRow(
-		telBotAPI.NewKeyboardButton("4"),
-		telBotAPI.NewKeyboardButton("5"),
-		telBotAPI.NewKeyboardButton("6"),
+		telBotAPI.NewKeyboardButton(Test3),
+		telBotAPI.NewKeyboardButton(Test4),
+		telBotAPI.NewKeyboardButton(Test5),
 	),
 )
 
-var keyboard2 = telBotAPI.NewInlineKeyboardMarkup(
+/*var keyboard2 = telBotAPI.NewInlineKeyboardMarkup(
 	telBotAPI.NewInlineKeyboardRow(
 		telBotAPI.NewInlineKeyboardButtonURL("1.com", "http://1.com"),
 		telBotAPI.NewInlineKeyboardButtonData("2", "two"),
@@ -134,17 +143,13 @@ var keyboard2 = telBotAPI.NewInlineKeyboardMarkup(
 		telBotAPI.NewInlineKeyboardButtonData("5", "five"),
 		telBotAPI.NewInlineKeyboardButtonData("6", "six"),
 	),
-)
+)*/
 
 func listen(updateConfig *telBotAPI.UpdateConfig) {
 	updates := bot.GetUpdatesChan(*updateConfig)
 
 	for update := range updates {
 		if update.Message == nil {
-			continue
-		}
-
-		if !update.Message.IsCommand() {
 			continue
 		}
 
@@ -162,11 +167,39 @@ func listen(updateConfig *telBotAPI.UpdateConfig) {
 			reply.Text = "I don't know that command"
 		}*/
 
-		switch update.Message.Command() {
-		case "open":
-			reply.ReplyMarkup = keyboard2
-		case "close":
-			reply.ReplyMarkup = telBotAPI.NewRemoveKeyboard(true)
+		if update.Message.IsCommand() {
+			switch update.Message.Command() {
+			case "start":
+				reply.Text = `
+شلام جیگر
+/start
+/open
+/close
+`
+			case "open":
+				reply.ReplyMarkup = keyboard1
+			case "close":
+				reply.ReplyMarkup = telBotAPI.NewRemoveKeyboard(true)
+			default:
+				reply.Text = "I don't know that command"
+			}
+		} else {
+			switch update.Message.Text {
+			case AddUser:
+				reply.Text = "ماخوای آدم اد کنی؟"
+			case Test1:
+				reply.Text = "شی ماخوای د‌ه"
+			case Test2:
+				reply.Text = "برو پی کارت کره خر"
+			case Test3:
+				reply.Text = "برو با او قین خرابت"
+			case Test4:
+				reply.Text = "روته برم پسررررر"
+			case Test5:
+				reply.Text = "خاله چیه تخمم نیستی"
+			default:
+
+			}
 		}
 
 		if _, err := bot.Send(reply); err != nil {
