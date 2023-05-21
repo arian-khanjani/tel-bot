@@ -6,13 +6,14 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"tel-bot/model"
 	"time"
 )
 
 type Repo struct {
-	client mongo.Client
-	db     mongo.Database
-	coll   mongo.Collection
+	client *mongo.Client
+	db     *mongo.Database
+	coll   *mongo.Collection
 }
 
 type ConnProps struct {
@@ -40,29 +41,29 @@ func New(props ConnProps) (*Repo, error) {
 	db := c.Database(props.DB)
 
 	return &Repo{
-		client: *c,
-		db:     *db,
-		coll:   *db.Collection(props.Coll),
+		client: c,
+		db:     db,
+		coll:   db.Collection(props.Coll),
 	}, nil
 }
 
-func (r *Repo) List(ctx context.Context) (interface{}, error) {
-	cur, err := r.coll.Find(ctx, bson.D{})
+func (r *Repo) ListClients(ctx context.Context, providerID int64) (*[]model.Client, error) {
+	cur, err := r.coll.Find(ctx, bson.D{{"provider_id", providerID}})
 	if err != nil {
 		return nil, err
 	}
 
-	var res []interface{}
+	var res []model.Client
 	err = cur.All(ctx, &res)
 	if err != nil {
 		return nil, err
 	}
 
-	return nil, nil
+	return &res, nil
 }
 
-func (r *Repo) Get(ctx context.Context, id interface{}) (interface{}, error) {
-	var res interface{}
+func (r *Repo) GetClient(ctx context.Context, id int64) (*model.Client, error) {
+	var res model.Client
 	err := r.coll.FindOne(ctx, bson.D{{"_id", id}}).Decode(&res)
 	if err != nil {
 		return nil, err
@@ -71,21 +72,17 @@ func (r *Repo) Get(ctx context.Context, id interface{}) (interface{}, error) {
 	return &res, nil
 }
 
-func (r *Repo) Update(ctx context.Context, u interface{}) (interface{}, error) {
-	upd, err := r.coll.ReplaceOne(ctx, bson.D{{"_id", u}}, u)
+func (r *Repo) GetUser(ctx context.Context, id int64) (*model.User, error) {
+	var res model.User
+	err := r.coll.FindOne(ctx, bson.D{{"_id", id}}).Decode(&res)
 	if err != nil {
-		return nil, err
+		return &res, err
 	}
 
-	if upd.MatchedCount == 0 {
-		return nil, mongo.ErrNoDocuments
-	}
-
-	return u, nil
+	return &res, nil
 }
 
-func (r *Repo) Create(ctx context.Context, u interface{}) (interface{}, error) {
-	//u.Id = primitive.NewObjectID().Hex()
+func (r *Repo) CreateClient(ctx context.Context, u *model.Client) (*model.Client, error) {
 	_, err := r.coll.InsertOne(ctx, u)
 	if err != nil {
 		return nil, err
@@ -94,7 +91,16 @@ func (r *Repo) Create(ctx context.Context, u interface{}) (interface{}, error) {
 	return u, nil
 }
 
-func (r *Repo) Delete(ctx context.Context, id interface{}) error {
+func (r *Repo) CreateUser(ctx context.Context, u *model.User) (*model.User, error) {
+	_, err := r.coll.InsertOne(ctx, u)
+	if err != nil {
+		return nil, err
+	}
+
+	return u, nil
+}
+
+func (r *Repo) Delete(ctx context.Context, id int64) error {
 	one, err := r.coll.DeleteOne(ctx, bson.D{{"_id", id}})
 	if err != nil {
 		return err
